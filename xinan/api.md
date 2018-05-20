@@ -64,7 +64,7 @@
     接受参数
         必须包含参数
             token (str) 用户登录时所获得的 cookies_id
-            base_privacy (list) 用户的基础隐私设置
+            base_privacy (list of str) 用户的基础隐私设置
                 有效值包括
                     address
                     phone
@@ -78,7 +78,7 @@
                     name
                     stucard
                     contract
-            scene_privacy (list) 用户的地点隐私设置
+            scene_privacy (list of str) 用户的地点隐私设置
                     bedroom
                     chemistry_lab
                     conference_center
@@ -101,8 +101,8 @@
         user (dict)
             若成功才会包含该字段
             userID (str) 用户名
-            base_privacy (list) 用户的基础隐私设置
-            scene_privacy (list) 用户的地点隐私设置
+            base_privacy (list of str) 用户的基础隐私设置
+            scene_privacy (list of str) 用户的地点隐私设置
 
 #### 用户添加自己的人脸
 
@@ -111,7 +111,8 @@
         必须包含参数
             token (str) 用户登录时所获得的 cookies_id
             suffix (str) 人脸图片的后缀
-            content (str) 人脸图片的二进制数据
+            content (str) 人脸图片的数据
+                需要首先经过gzip压缩，之后再通过base64编码
     返回结果
         code (int)
             1 表示 成功
@@ -139,9 +140,12 @@
         code (int)
             1 表示 成功
             0 表示 失败
-        face_ids (list) 用户的人脸ID列表
+        faces (list of dict) 用户的人脸照信息列表
+            每个人脸信息包含以下字段
+                imageID (str) 用户获取图片二进制数据的图片ID
+                date (int) 图片添加时间毫秒数
 
-#### 用户获取图片二进制数据
+#### 用户唯一可以获取图片二进制数据接口
 
     /getimage
     接受参数
@@ -153,5 +157,7 @@
             1 表示 成功
             0 表示 失败
         suffix (str) 图片的后缀
-        content (str) 图片的二进制数据
+        content (str) 图片的数据
+            首先经过gzip压缩，后经过base64编码
+            要获取原始数据需要先经过base64解码，之后通过gzip解压缩
         date (int) 日期毫秒数
