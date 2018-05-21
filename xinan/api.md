@@ -130,7 +130,7 @@
             1 表示 成功
             0 表示 失败
 
-#### 用户获取已经添加的人脸ID
+#### 用户获取已经添加的人脸信息
 
     /getfaces
     接受参数
@@ -144,6 +144,73 @@
             每个人脸信息包含以下字段
                 imageID (str) 用户获取图片二进制数据的图片ID
                 date (int) 图片添加时间毫秒数
+
+#### 用户添加相册照片
+
+    /addphoto
+    接受参数
+        必须包含参数
+            token (str) 用户登录时所获得的 cookies_id
+            suffix (str) 照片的后缀
+            text (str) 照片的文字描述
+            content (str) 照片的数据
+                需要首先经过gzip压缩，之后再通过base64编码
+    返回结果
+        code (int)
+            1 表示 成功
+            0 表示 失败
+        imageID (str) 该照片的图片ID
+        face_to_loc (list of list) 需要打码的人脸位置(ymin, xmax, ymax, xmin)
+        privacy_loc (dict of list) 
+            key (str) 选取的标识
+            value (list) 需要选取的隐私信息框(顺时针)
+
+#### 用户选定照片打码位置ID
+
+    /ensureprivacyloc
+    接受参数
+        必须包含参数
+            token (str) 用户登录时所获得的 cookies_id
+            image_id (str) 该照片的图片ID
+            index (list of str) 隐私框标识ID
+    返回结果
+        code (int)
+            1 表示 成功
+            0 表示 失败
+
+#### 用户删除相册照片
+
+    /deletephoto
+    接受参数
+        必须包含参数
+            token (str) 用户登录时所获得的 cookies_id
+            image_id (str) 用户要删除的照片的图片ID
+    返回结果
+        code (int)
+            1 表示 成功
+            0 表示 失败
+
+#### 用户获取自己照片信息列表
+
+    /getphotos
+    接受参数
+        必须包含参数
+            token (str) 用户登录时所获得的 cookies_id
+            begin (int) 按添加时间排序的开始坐标 
+            limit (int) 返回的照片信息的最大个数
+    返回结果
+        code (int)
+            1 表示 成功
+            0 表示 失败
+        photos (list of dict)
+            imageID (str) 图片ID
+            privacy_index (list of str) 需要隐私框的标识列表
+            privacy_loc (dict of list)
+                key (str) 选取的标识
+                value (list) 需要选取的隐私信息框(顺时针)
+            text (str) 照片文字描述
+            face_to_loc (list of list) 需要打码的人脸位置(ymin, xmax, ymax, xmin)
+            date (int) 日期毫秒数
 
 #### 用户唯一可以获取图片二进制数据接口
 
