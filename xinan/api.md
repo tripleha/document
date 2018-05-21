@@ -78,11 +78,34 @@
                     name
                     stucard
                     contract
+                    business_licence
+                    serial_number
+                    face
             scene_privacy (list of str) 用户的地点隐私设置
+                有效值包括
                     bedroom
                     chemistry_lab
                     conference_center
                     conference_room
+                    office_cubicles
+                    airport_terminal
+                    bank_vault
+                    banquet_hall
+                    bathroom
+                    biology_laboratory
+                    childs_room
+                    dining_hall
+                    dining_room
+                    dorm_room
+                    dressing_room
+                    embassy
+                    gymnasium
+                    home_office
+                    hospital_room
+                    legislative_chamber
+                    physics_laboratory
+                    restaurant
+                    server_room
     返回结果
         code (int)
             1 表示 成功
