@@ -106,6 +106,8 @@
                     physics_laboratory
                     restaurant
                     server_room
+            phone_num (str) 用户的手机号码
+            idcard_num (str) 用户的身份证号码
     返回结果
         code (int)
             1 表示 成功
