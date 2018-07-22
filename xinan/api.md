@@ -192,6 +192,7 @@
         privacy_loc (dict of list) 
             key (str) 选取的标识
             value (list) 需要选取的隐私信息框(顺时针)
+        privacy_num_loc (list of list) 需要打码的数字位置 [xmin, ymin, xmax, ymax]
         scene (str) 照片的场景名
         score (float) 隐私评级分数
 
@@ -238,6 +239,7 @@
             privacy_loc (dict of list)
                 key (str) 选取的标识
                 value (list) 需要选取的隐私信息框(顺时针)
+            privacy_num_loc (list of list) 需要打码的数字位置 [xmin, ymin, xmax, ymax]
             text (str) 照片文字描述
             face_to_loc (list of list) 需要打码的人脸位置 [xmin, ymin, xmax, ymax];原来是(ymin, xmax, ymax, xmin)
             scene (str) 照片的场景名
