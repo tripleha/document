@@ -64,6 +64,7 @@
     接受参数
         必须包含参数
             token (str) 用户登录时所获得的 cookies_id
+        可选参数
             base_privacy (list of str) 用户的基础隐私设置
                 有效值包括
                     address
@@ -113,7 +114,7 @@
             1 表示 成功
             0 表示 失败
 
-#### 获得用户设置信息
+#### 获得用户信息
 
     /getuserinfo
     接受参数
@@ -128,6 +129,8 @@
             userID (str) 用户名
             base_privacy (list of str) 用户的基础隐私设置
             scene_privacy (list of str) 用户的地点隐私设置
+            phone_num (str) 用户的手机号码
+            idcard_num (str) 用户的身份证号码
 
 #### 用户添加自己的人脸
 
@@ -185,10 +188,12 @@
             1 表示 成功
             0 表示 失败
         imageID (str) 该照片的图片ID
-        face_to_loc (list of list) 需要打码的人脸位置(ymin, xmax, ymax, xmin)
+        face_to_loc (list of list) 需要打码的人脸位置 [xmin, ymin, xmax, ymax];原来是(ymin, xmax, ymax, xmin)
         privacy_loc (dict of list) 
             key (str) 选取的标识
             value (list) 需要选取的隐私信息框(顺时针)
+        scene (str) 照片的场景名
+        score (float) 隐私评级分数
 
 #### 用户选定照片打码位置ID
 
@@ -234,7 +239,9 @@
                 key (str) 选取的标识
                 value (list) 需要选取的隐私信息框(顺时针)
             text (str) 照片文字描述
-            face_to_loc (list of list) 需要打码的人脸位置(ymin, xmax, ymax, xmin)
+            face_to_loc (list of list) 需要打码的人脸位置 [xmin, ymin, xmax, ymax];原来是(ymin, xmax, ymax, xmin)
+            scene (str) 照片的场景名
+            score (float) 隐私评级分数
             date (int) 日期毫秒数
 
 #### 用户唯一可以获取图片二进制数据接口
