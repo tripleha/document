@@ -44,3 +44,7 @@ typedef 与 # define 与 using
     a = a^b;
     b = a^b;
     a = a^b;
+
+## placement new
+
+## C++风格强制转换
