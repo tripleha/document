@@ -419,11 +419,90 @@
 - 排序
 
     - 选择和冒泡
+        选择排序的过程是每次选择最小的元素和头部交换，然后待排序的数组大小减 1 ，不断重复至全部完成排序。
+        冒泡排序是每次比较相邻位置，把大的往后移动，这样达到了每轮遍历都能将待排序数组最大的移动到末尾，然后待排序数组大小减 1 。
+        ```python
+        def selectSort(src: list) -> list:
+            # 选择排序
+            result = src[:]
+            sz = len(src)
+            for i in range(sz):
+                tmin = result[i]
+                tpos = i
+                for j in range(i+1, sz):
+                    if tmin > result[j]:
+                        tmin = result[j]
+                        tpos = j
+                if i != tpos:
+                    result[i], result[tpos] = result[tpos], result[i]
+            return result
+        
+        def bubbleSort(src: list) -> list:
+            # 冒泡排序
+            result = src[:]
+            sz = len(src)
+            for i in range(sz):
+                is_sorted = True
+                for j in range(sz-i-1):
+                    if result[j] > result[j+1]:
+                        is_sorted = False
+                        result[j], result[j+1] = result[j+1], result[j]
+                if is_sorted:
+                    break
+            return result
+        ```
     - 插入排序
+        插入排序的算法原理是通过不断减少数组的逆序数量从而使数组最终有序。具体的做法是每次都将未排序区的一个数插入到左侧已经排好顺序的数组中，插入的方式是一步一步的交换过去。
+        插入排序的每次交换都能够让逆序数量减少 1 ，所以交换次数时逆序数量，如果数据已经部分有序，那么插入排序效率会比较高。
+        ```python
+        def insertSort(src: list) -> list:
+            # 插入排序
+            result = src[:]
+            sz = len(src)
+            for i in range(sz):
+                for j in range(i, 0, -1):
+                    # 将原本第 i 位的元素往前交换，插入到正确位置
+                    if result[j] < result[j-1]:
+                        result[j], result[j-1] = result[j-1], result[j]
+                    else:
+                        break
+            return result
+        ```
     - 希尔排序
+        是插入排序的优化版本，因为插入排序一次交换只能减少 1 逆序数，所以在数据量大的情况下会比较慢。为了加快逆序数的减少，产生了希尔排序。希尔排序刚开始比较的步长大于 1 ，在排序的过程中会最终变回 1 。这样保证了数组能够最终排序完成。而因为一刚开始比较的步长大，所以交换是最少也能减少 1 的逆序数，或者能够减少更多的逆序数，所以比插入排序快。其实这个步长就是把数组分割成多个子序列进行插入排序。
+        希尔排序不是稳定排序(相等元素无法保证相对位置)。
+        - 步长增量序列的选择
+            不同的步长增量序列会带来不同的最坏情况下复杂度和平均复杂度。非常复杂，我们记一下结论就好。感兴趣的可以自行查找相关资料。
+            ||计算式|最坏时间复杂度|
+            |--|--|--|
+            |Shell|N/2<sup>k</sup>|O(N<sup>2</sup>)|
+            |Hibbard|2<sup>k</sup>-1|O(N<sup>1.5</sup>)|
+            |Knuth|h<sub>k</sub>=3*h<sub>k-1</sub>+1|O(N<sup>1.5</sup>)|
+            |Sedgewick|max(9*4<sup>j</sup>−9∗2<sup>j</sup>+1,4<sup>k</sup>−3∗2<sup>k</sup>+1)|O(N<sup>4/3</sup>)|
+        ```python
+        def shellSort(src: list) -> list:
+            result = src[:]
+            sz = len(src)
+            steps = [1, 5, 19, 41, 109, 209, 505, 929, 2161, 3905, 8929, 16001, 36289, 64769, 146305, 260609]
+            for h in steps[::-1]:
+                if sz <= h:
+                    continue
+                for i in range(sz):
+                    for j in range(i, h-1, -h):
+                        if result[j] < result[j-h]:
+                            result[j], result[j-h] = result[j-h], result[j]
+                            t += 1
+                        else:
+                            break
+            return result
+        ```
+        通过实验，希尔排序的确能够实现比插入排序更少的交换次数。
     - 快速排序(快排)与三种优化
+        快排是最快的通用排序算法。它的原理是每次选取一个数，然后将小于它的元素放一边，大于的放另一边，然后在对该数切分的两个子数组进行排序。
     - 多路归并排序
+    - 堆排序
 
 - 树的遍历
 
+    - 前序中序后序层序
     - 线索二叉树
