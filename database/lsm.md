@@ -2,6 +2,8 @@
 
 ## 一、LSM-Tree 基础设计总结
 
+(编写时间跨度太大，前面的有些问题没想起来改。后面再看
+
 - ### LSM-Tree 的出现以及想要解决的问题
     随着硬件技术的进步， CPU 和内存技术都得到了不小的发展，单机情况下计算力总是富裕的，并且RAM也越来越大，允许我们将大部分热数据缓存在内存中。但是对于磁盘等外存而言，随机I/O的效率仍然特别低下，尤其是随机写的效率(与顺序写效率差千倍)。即使是 SSD ，虽然顺序写和随机写的性能差距不像磁盘那么大(差距十倍)，但也有足够的优化空间(随着 SSD 的普及 LSM-Tree 在 SSD 上的优化也是当前的一个热点)。
     1991年加利福尼亚大学伯克利分校的一篇论文《The Design and Implementation of a Log-Structured File System》提出了一种将多次随机写转化为一次顺序写的 append only log 的磁盘写思路。
@@ -41,6 +43,7 @@
         - 关于 bloom filter 的合并与新建的选择
             在 WiredTiger 的 wiki 中有过相关讨论。在合并两个 sstable 时 bloom filter 可以通过或操作来快速合并(如果它们的大小相同)。但是我们知道 LSM-Tree 的删除是通过插入墓碑值来进行的，所以合并两个 sstable 是可能会使某个 key 值被丢弃，如果直接快速合并 bloom filter ，这会因丢弃 key 还存在而造成更大的假阳率。而且这个假阳率的影响是无法简单通过对被丢弃的 key 再建一层索引来解决的(这和 bloom filter 的结构有关，因为被丢弃 key 的 hash 计算值所污染的区域配合上真实存在的 key 的填补区域会造成更多 key 存在的假象 -- emmm 比较难以用语言来形容)。而且在有了 《Less Hashing, Same Performance:Building a Better Bloom Filter》 中所介绍的方法，可以用更少的 hash 计算开销建立 bloom filter 。而且这样不需要保证所有 bloom filter 都保持相同大小。
         - Monkey
+        - 最大层可选不使用
 
 - ### 更多的优化方式
     - **key value 分开存储**
@@ -48,7 +51,7 @@
     - **LRUCache**
         leveldb 的读优化策略，使用更多内存来存储热数据。
         在了解此之前我一直有个疑问，就是如果承载热数据的工作交给了 memtable ，那么查询操作所标定的热数据即使不被更新也需要插入到 memtable 中，如果不在刷盘时剔除这些未被修改过的数据会造成严重的写浪费。既然如此，还不如用更加快速更加专业的数据结构和算法来管理这部分读缓存。
-        所以 leveldb 用独立的 LRUCache 来管理读缓存。数据结构是 hash 加上热链和冷链。为了支持更高的并发访问又做了专门的一层 ShardedLRUCache ，这层是为了提高多线程访问的效率，减少竞争。 ShardedLRUCache 内部有 16 个独立的 LRUCache ，查找时会先确定 key 值所在 LRUCache ，然后再上锁查找。
+        所以 leveldb 用独立的 LRUCache 来管理读缓存。数据结构是 hash 加上热链和冷链(冷链是为了提升数据在内存中的驻留时间，感觉实现上更像 2Q ，暂时没研究是双 LRU 还是 LRU + FIFO)。为了支持更高的并发访问又做了专门的一层 ShardedLRUCache ，这层是为了提高多线程访问的效率，减少竞争。 ShardedLRUCache 内部有 16 个独立的 LRUCache ，查找时会先确定 key 值所在 LRUCache ，然后再上锁查找。
         关于 leveldb 的代码实现细节网上的优质文章实在是太多，这里就不再赘述了。
 
 ## 二、LSM-Tree 设计核心
@@ -56,6 +59,38 @@
 - sstable 组织和 compaction 策略
     因为 LSM-Tree 是由树结构衍生而来的，原始算法描述的磁盘内数据也是抽象为一颗树，所以 sstable 天然具有一定的层级结构。一般 sstable 层级结构是按照数据版本(新旧)进行分层的，较新版本的数据位于上层，这与内存中数据刷入磁盘的顺序相符。
     - size-tiered compaction
-        按照 sstable 的大小来进行分层，越下层的 sstable 越大。
+        按照 sstable 的大小来进行分层，越下层的 sstable 越大。每次合并都是将上层的所有 sstable 合并成一个大的 sstable 放入下层。每层允许有多个 run 存在。这样做虽然不会有写放大的问题，所以就写效率来说要好，但是这样做会带来明显的空间放大的问题。上层 sstable 在下层 sstable 还未完成写入时还会存在，在最终写完成后才会删除被合并的 sstable ，最严重的空间放大会出现在最后一层，因为最后一层往往是占用最大部分存储的，最下层发生合并时，中间需要占用的磁盘空间最大达到最下层的两倍。除了空间放大问题，因为不限制每层的 run 数量，所以磁盘数据查询效率也会比较低。
     - leveled compaction
         one run per level 的 sstable 组织方式，这样的分层方式有着不错的读性能。但是在 compaction 过程中，为了维护 one run per level 的状态，需要将向下层合并的 sstable 和下层的有 key range 重叠部分的 sstable 都读取并将数据归并写入到新的同层 sstable 中。这实际上造成了写放大，因为原本属于该层的数据被读出并再次写入到同一层中。
+    - lazy leveled compaction
+        size-tiered 和 leveled 的结合。最下层控制为 1 run ，其他层使用 size-tiered 的方式。
+    - fluid leveled compaction
+        最后一层为 z runs ，其他层为 k runs 。lazy leveled 是其的一种特殊情况。
+        - 为什么最后一层需要特殊处理
+            对于 sstable 分层管理的系统中，越下层存储的数据所占比重就越重。一般理想状态下最下层占 90% ，次下层占 9% 。
+
+- 具体分析
+    |符号|意义|单位|
+    |--|--|--|
+    |N|数据总量|个|
+    |L|总的 sstable 分层层数|层|
+    |L<sub>max</sub>|最大可能层数|层|
+    |B|单个存储块能存储的数据数量|个|
+    |P|按块数量计算的缓存大小|块|
+    |T|相邻两层之间的大小比||
+    |T<sub>lim</sub>|第 L 层和第 1 层的大小比||
+    |M|为 bloom filter 分配的内存|位|
+    |p<sub>i</sub>|在第 i 层 bloom filter 的假阳率||
+    |s|range 查询的平均涉及数据个数|个|
+    |R|没有结果的点查询开销|I/O次数|
+    |V|有结果的点查询开销|I/O次数|
+    |Q|range 查询开销|I/O次数|
+    |W|更新开销|I/O次数|
+    |K|第 1 层到第 L-1 层的 runs 上限|个|
+    |Z|第 L 层 runs 上限|个|
+
+    - 层数的计算
+        一般第 0 层是刚从内存中刷入的。则第 0 层有 (B * P) 个数据，则对于第 i 层就有 (B * P) * T<sup>i</sup> 个数据。又对于最大层大概有 N * (T-1)/T 个数据。
+        则: L = log<sub>T</sub>(N/(B*P) * (T-1)/T) 的向上取整。
+    - 点查询
+        毕设不用了，留个坑，以后填。。。
